@@ -2,11 +2,58 @@ import UIKit
 import SnapKit
 import Combine
 
-class RandomCatViewController : UIViewController {
+final class RandomCatViewController : UIViewController {
     private let viewModel: RandomCatViewModel
     
-    private var breeds: [Breed] = []
+    private var randomCat: CatModel? = nil
     private var isLoading = false
+    
+    private let catImageViewContainer: UIView = {
+        let containerView = UIView()
+        
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOpacity = 0.5
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 0)
+        containerView.layer.shadowRadius = 5
+        containerView.layer.cornerRadius = 15
+        containerView.backgroundColor = .white
+        containerView.clipsToBounds = false
+        
+        return containerView
+    }()
+    
+    private let catImageView: UIImageView = {
+        let imageView = UIImageView()
+        
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 15
+        imageView.layer.masksToBounds = true
+        
+        return imageView
+    }()
+    
+    private let likeButton: UIButton = {
+        let button = UIButton()
+        
+        button.setImage(UIImage(systemName: "heart.circle"), for: .normal)
+        button.tintColor = .green
+        button.imageView?.contentMode = .scaleAspectFit
+        button.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 75, weight: .bold, scale: .large), forImageIn: .normal)
+        
+        return button
+    }()
+    
+    private let dislikeButton: UIButton = {
+        let button = UIButton()
+        
+        button.setImage(UIImage(systemName: "xmark.circle"), for: .normal)
+        button.tintColor = .red
+        button.imageView?.contentMode = .scaleAspectFit
+        button.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 75, weight: .bold, scale: .large), forImageIn: .normal)
+            
+        return button
+    }()
     
     init(viewModel: RandomCatViewModel) {
         self.viewModel = viewModel
@@ -19,11 +66,53 @@ class RandomCatViewController : UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupTableView()
-        
+        setupView()
+        bindViewModel()
     }
     
-    private func setupTableView() {
-        view.backgroundColor = .darkGray
+    private func setupView() {
+        view.addSubview(catImageViewContainer)
+        view.addSubview(catImageView)
+        view.addSubview(likeButton)
+        view.addSubview(dislikeButton)
+        
+        catImageViewContainer.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(5)
+            $0.leading.trailing.equalToSuperview()
+        }
+        
+        catImageView.snp.makeConstraints {
+            $0.top.equalTo(catImageViewContainer.snp.top).inset(75)
+            $0.leading.trailing.equalTo(catImageViewContainer).inset(5)
+            $0.bottom.equalTo(catImageViewContainer.snp.bottom).inset(50)
+        }
+        
+        dislikeButton.snp.makeConstraints {
+            $0.top.equalTo(catImageViewContainer.snp.bottom).offset(30)
+            $0.leading.equalToSuperview().inset(50)
+        }
+        
+        likeButton.snp.makeConstraints {
+            $0.top.equalTo(catImageViewContainer.snp.bottom).offset(30)
+            $0.trailing.equalToSuperview().inset(50)
+        }
+    }
+    
+    private func bindViewModel() {
+        viewModel.randomCatPublisher
+            .sink { [weak self] cat in
+                self?.randomCat = cat
+                if let image = cat?.image {
+                    self?.catImageView.image = image
+                }
+            }
+            .store(in: &viewModel.cancellables)
+        
+        viewModel.isLoadingPublisher
+            .sink { [weak self] isLoading in
+                self?.isLoading = isLoading
+                // Show or hide a loading indicator
+            }
+            .store(in: &viewModel.cancellables)
     }
 }

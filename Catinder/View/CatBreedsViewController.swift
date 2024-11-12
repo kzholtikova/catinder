@@ -2,7 +2,7 @@ import UIKit
 import SnapKit
 import Combine
 
-class CatBreedsViewController : UIViewController {
+final class CatBreedsViewController : UIViewController {
     private let viewModel: CatBreedsViewModel
     
     private var breedModels: [BreedModel] = []

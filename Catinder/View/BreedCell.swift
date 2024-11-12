@@ -1,6 +1,6 @@
 import UIKit
 
-class BreedCell: UITableViewCell {
+final class BreedCell: UITableViewCell {
     static let reuseIdentifier = "BreedCell"
     
     private let breedImageView: UIImageView = {
@@ -40,7 +40,7 @@ class BreedCell: UITableViewCell {
         
         breedImageView.snp.makeConstraints {
             $0.top.leading.bottom.equalToSuperview().inset(10)
-            $0.width.equalTo(130)
+            $0.height.equalTo(130)
         }
         
         nameLabel.snp.makeConstraints {

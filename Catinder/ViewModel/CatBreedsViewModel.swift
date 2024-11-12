@@ -37,7 +37,7 @@ final class CatBreedsViewModel {
     }
     
     private func fetchBreedImages(for breeds: [Breed]) {
-        let breedImagePublishers = breeds.map { self.catAPIService.fetchBreedImage(for: $0) }
+        let breedImagePublishers = breeds.map { catAPIService.fetchBreedImage(for: $0) }
         
         Publishers.MergeMany(breedImagePublishers)
             .collect()
