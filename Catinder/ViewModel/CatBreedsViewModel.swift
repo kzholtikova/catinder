@@ -18,10 +18,9 @@ final class CatBreedsViewModel {
     
     init(catAPIService: CatAPIService) {
         self.catAPIService = catAPIService
-        fetchBreeds()
     }
     
-    private func fetchBreeds() {
+    func fetchBreeds() {
         isLoadingSubject.send(true)
         
         catAPIService.fetchCatBreeds()

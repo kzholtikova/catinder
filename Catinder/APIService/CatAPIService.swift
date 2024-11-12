@@ -73,17 +73,6 @@ final class CatAPIService {
             .eraseToAnyPublisher()
     }
     
-    func fetchCatImage(for cat: Cat) -> AnyPublisher<CatModel, Error> {
-        guard let url = URL(string: cat.url) else {
-            return Just(CatModel(id: cat.id, image: nil))
-                        .setFailureType(to: Error.self)
-                        .eraseToAnyPublisher()
-        }
-        
-        return fetchImage(at: url).compactMap { $0 }.map { CatModel(id: cat.id, image: $0) }
-            .eraseToAnyPublisher()
-    }
-    
     func fetchCatBreeds() -> AnyPublisher<[Breed], Error> {
         let breedsURL = APIEndpoint.baseURL.appendingPathComponent("breeds")
         

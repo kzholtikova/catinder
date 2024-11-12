@@ -1,14 +1,20 @@
 import Foundation
 import Combine
+import UIKit
 
 final class RandomCatViewModel {
-    private var randomCatSubject = CurrentValueSubject<CatModel?, Never>(nil)
+    private var catSubject = CurrentValueSubject<Cat?, Never>(nil)
+    private let catImageSubject = PassthroughSubject<UIImage?, Never>()
     private var isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
     private let catAPIService: CatAPIService
     var cancellables = Set<AnyCancellable>()
     
-    var randomCatPublisher: AnyPublisher<CatModel?, Never> {
-        randomCatSubject.eraseToAnyPublisher()
+    var catPublisher: AnyPublisher<Cat?, Never> {
+        catSubject.eraseToAnyPublisher()
+    }
+    
+    var catImagePublisher: AnyPublisher<UIImage?, Never> {
+        catImageSubject.eraseToAnyPublisher()
     }
 
     var isLoadingPublisher: AnyPublisher<Bool, Never> {
@@ -17,36 +23,47 @@ final class RandomCatViewModel {
     
     init(catAPIService: CatAPIService) {
         self.catAPIService = catAPIService
-        fetchRandomCat()
     }
     
-    private func fetchRandomCat() {
+    func fetchRandomCat() {
         isLoadingSubject.send(true)
         
         catAPIService.fetchCats(limit: 1)
             .compactMap { $0.first }
-            .flatMap { [weak self] cat in
-                self?.catAPIService.fetchCatImage(for: cat) ?? Empty().eraseToAnyPublisher()
-            }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 self?.isLoadingSubject.send(false)
                 if case .failure = completion {
-                    self?.randomCatSubject.send(nil)
+                    self?.catSubject.send(nil)
                 }
             } receiveValue: { [weak self] cat in
-                self?.randomCatSubject.send(cat)
+                self?.catSubject.send(cat)
             }
             .store(in: &cancellables)
     }
     
+     func fetchCurrentCatImage() {
+        guard let cat = catSubject.value, let url = URL(string: cat.url) else { return }
+        
+        catAPIService.fetchImage(at: url)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { [weak self] completion in
+                if case .failure = completion {
+                    self?.catImageSubject.send(nil)
+                }
+            }, receiveValue: { [weak self] image in
+                self?.catImageSubject.send(image)
+            })
+            .store(in: &cancellables)
+    }
+    
     func likeCat() {
-        guard let currentCat = randomCatSubject.value else { return }
+        guard let currentCat = catSubject.value else { return }
         print("Liked cat \(currentCat.id)")
     }
     
     func dislikeCat() {
-        guard let currentCat = randomCatSubject.value else { return }
+        guard let currentCat = catSubject.value else { return }
         print("Disliked cat \(currentCat.id)")
     }
 }

@@ -27,6 +27,7 @@ final class CatBreedsViewController : UIViewController {
         super.viewDidLoad()
         setupTableView()
         bindViewModel()
+        viewModel.fetchBreeds()
     }
     
     private func setupTableView() {

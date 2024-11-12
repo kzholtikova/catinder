@@ -5,7 +5,7 @@ import Combine
 final class RandomCatViewController : UIViewController {
     private let viewModel: RandomCatViewModel
     
-    private var randomCat: CatModel? = nil
+    private var randomCat: Cat? = nil
     private var isLoading = false
     
     private let catImageViewContainer: UIView = {
@@ -68,6 +68,7 @@ final class RandomCatViewController : UIViewController {
         super.viewDidLoad()
         setupView()
         bindViewModel()
+        viewModel.fetchRandomCat()
     }
     
     private func setupView() {
@@ -76,9 +77,13 @@ final class RandomCatViewController : UIViewController {
         view.addSubview(likeButton)
         view.addSubview(dislikeButton)
         
+        likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
+        dislikeButton.addTarget(self, action: #selector(dislikeButtonTapped), for: .touchUpInside)
+        
         catImageViewContainer.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(5)
             $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(500)
         }
         
         catImageView.snp.makeConstraints {
@@ -99,12 +104,16 @@ final class RandomCatViewController : UIViewController {
     }
     
     private func bindViewModel() {
-        viewModel.randomCatPublisher
+        viewModel.catPublisher
             .sink { [weak self] cat in
                 self?.randomCat = cat
-                if let image = cat?.image {
-                    self?.catImageView.image = image
-                }
+                self?.viewModel.fetchCurrentCatImage()
+            }
+            .store(in: &viewModel.cancellables)
+        
+        viewModel.catImagePublisher
+            .sink { [weak self] image in
+                self?.catImageView.image = image
             }
             .store(in: &viewModel.cancellables)
         
@@ -114,5 +123,15 @@ final class RandomCatViewController : UIViewController {
                 // Show or hide a loading indicator
             }
             .store(in: &viewModel.cancellables)
+    }
+    
+    @objc private func likeButtonTapped() {
+        viewModel.likeCat()
+        viewModel.fetchRandomCat()
+    }
+    
+    @objc private func dislikeButtonTapped() {
+        viewModel.dislikeCat()
+        viewModel.fetchRandomCat()
     }
 }
