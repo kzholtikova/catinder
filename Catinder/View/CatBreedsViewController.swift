@@ -5,7 +5,8 @@ import Combine
 final class CatBreedsViewController : UIViewController {
     private let viewModel: CatBreedsViewModel
     
-    private var breedModels: [BreedModel] = []
+    private var breeds: [Breed] = []
+    private var images: [UIImage?] = []
     private var isLoading = false
     
     private let tableView: UITableView = {
@@ -43,12 +44,13 @@ final class CatBreedsViewController : UIViewController {
     }
     
     private func bindViewModel() {
-        viewModel.breedModelsPublisher
-            .sink { [weak self] breedModels in
-                self?.breedModels = breedModels
-                self?.tableView.reloadData()
-            }
-            .store(in: &viewModel.cancellables)
+        Publishers.CombineLatest(viewModel.breedsPublisher, viewModel.breedsImagesPublisher)
+           .sink { [weak self] breeds, images in
+               self?.breeds = breeds
+               self?.images = images
+               self?.tableView.reloadData()
+           }
+           .store(in: &viewModel.cancellables)
         
         viewModel.isLoadingPublisher
             .sink { [weak self] isLoading in
@@ -61,7 +63,7 @@ final class CatBreedsViewController : UIViewController {
 
 extension CatBreedsViewController : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return breedModels.count
+        return breeds.count
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -69,12 +71,11 @@ extension CatBreedsViewController : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let breedModel = breedModels[indexPath.row]
         guard let cell = tableView.dequeueReusableCell(withIdentifier: BreedCell.identifier, for: indexPath) as? BreedCell else {
             return UITableViewCell()
         }
         
-        cell.setupCell(with: breedModel)
+        cell.setupCell(with: breeds[indexPath.row], image: images[indexPath.row])
         return cell
     }
 }

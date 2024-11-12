@@ -85,20 +85,17 @@ final class CatAPIService {
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
-    
-    func fetchBreedImage(for breed: Breed) -> AnyPublisher<BreedModel, Never> {
-        return fetchCats(limit: 1, breedID: breed.id)
-            .map { cats in
-                guard let urlString = cats.first?.url, let url = URL(string: urlString) else {
-                    return BreedModel(breed: breed, image: nil)
+
+    func fetchImageForBreed(breedID: String) -> AnyPublisher<UIImage?, Error> {
+        return fetchCats(breedID: breedID)
+            .flatMap { cats -> AnyPublisher<UIImage?, Error> in
+                guard let firstCat = cats.first, let imageURL = URL(string: firstCat.url) else {
+                    return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
                 }
-                guard let imageData = try? Data(contentsOf: url), let image = UIImage(data: imageData) else {
-                    return BreedModel(breed: breed, image: nil)
-                }
-                return BreedModel(breed: breed, image: image)
+                return self.fetchImage(at: imageURL)
             }
-            .catch { _ in Just(BreedModel(breed: breed, image: nil)) }
             .eraseToAnyPublisher()
     }
+    
 }
         
