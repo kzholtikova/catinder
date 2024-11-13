@@ -38,7 +38,6 @@ final class BreedCell: UITableViewCell {
         super.prepareForReuse()
         
         nameLabel.text = nil
-        breedImageView.image = nil
     }
     
     private func setupView() {

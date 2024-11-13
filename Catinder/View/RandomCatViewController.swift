@@ -7,6 +7,12 @@ final class RandomCatViewController : UIViewController {
     
     private var randomCat: Cat? = nil
     
+    private let contentViewContainer: UIView = {
+        let containerView = UIView()
+        containerView.backgroundColor = .white
+        return containerView
+    }()
+    
     private let catImageViewContainer: UIView = {
         let containerView = UIView()
         
@@ -68,31 +74,41 @@ final class RandomCatViewController : UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        setupLayout()
         bindViewModel()
         viewModel.fetchRandomCat()
     }
     
     private func setupView() {
-        view.addSubview(catImageViewContainer)
-        view.addSubview(catImageView)
-        view.addSubview(likeButton)
-        view.addSubview(dislikeButton)
+        view.addSubview(contentViewContainer)
+        contentViewContainer.addSubview(catImageViewContainer)
+        catImageViewContainer.addSubview(catImageView)
+        contentViewContainer.addSubview(likeButton)
+        contentViewContainer.addSubview(dislikeButton)
         view.addSubview(loadingView)
         view.bringSubviewToFront(loadingView)
         
+        view.backgroundColor = .darkGray
+        
         likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
         dislikeButton.addTarget(self, action: #selector(dislikeButtonTapped), for: .touchUpInside)
+    }
+    
+    private func setupLayout() {
+        contentViewContainer.snp.makeConstraints {
+            $0.edges.equalTo(view.safeAreaLayoutGuide)
+        }
         
         catImageViewContainer.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(10)
+            $0.top.equalToSuperview().inset(30)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(500)
+            $0.height.equalTo(450)
         }
         
         catImageView.snp.makeConstraints {
-            $0.top.equalTo(catImageViewContainer.snp.top).inset(75)
-            $0.leading.trailing.equalTo(catImageViewContainer).inset(5)
-            $0.bottom.equalTo(catImageViewContainer.snp.bottom).inset(50)
+            $0.top.equalToSuperview().inset(75)
+            $0.leading.trailing.equalToSuperview().inset(5)
+            $0.bottom.equalToSuperview().inset(50)
         }
         
         dislikeButton.snp.makeConstraints {

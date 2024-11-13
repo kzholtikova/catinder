@@ -14,10 +14,10 @@ final class Coordinator {
     }
     
     func start() {
-        UITabBar.appearance().barTintColor = .gray
+        UITabBar.appearance().barTintColor = .darkGray
         UITabBar.appearance().tintColor = .white
-        UITabBar.appearance().unselectedItemTintColor = .white
-        UITabBar.appearance().isTranslucent = false
+        UITabBar.appearance().unselectedItemTintColor = .lightGray
+        rootViewController.view.backgroundColor = .darkGray
         
         let tabBarController = UITabBarController()
         
@@ -29,7 +29,10 @@ final class Coordinator {
         let catBreedsVC = CatBreedsViewController(viewModel: catBreedsVM)
         catBreedsVC.tabBarItem = UITabBarItem(title: "", image: UIImage(systemName: "list.bullet"), tag: 1)
         
-        tabBarController.viewControllers = [randomCatVC, catBreedsVC]
+        let likedCatsVC = LikedCatsViewController(viewModel: LikedCatsViewModel.shared)
+        likedCatsVC.tabBarItem = UITabBarItem(title: "", image: UIImage(systemName: "heart.fill"), tag: 2)
+        
+        tabBarController.viewControllers = [randomCatVC, catBreedsVC, likedCatsVC]
         rootViewController.pushViewController(tabBarController, animated: false)
         
         window.rootViewController = rootViewController

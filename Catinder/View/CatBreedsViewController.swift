@@ -32,10 +32,6 @@ final class CatBreedsViewController : UIViewController {
         
         DispatchQueue.global(qos: .background).async {
             self.viewModel.fetchBreeds()
-
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
         }
     }
     

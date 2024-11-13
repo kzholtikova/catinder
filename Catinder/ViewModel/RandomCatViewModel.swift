@@ -4,7 +4,7 @@ import UIKit
 
 final class RandomCatViewModel {
     private var catSubject = CurrentValueSubject<Cat?, Never>(nil)
-    private let catImageSubject = PassthroughSubject<UIImage?, Never>()
+    private let catImageSubject = CurrentValueSubject<UIImage?, Never>(nil)
     private var isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
     private let catAPIService: CatAPIService
     var cancellables = Set<AnyCancellable>()
@@ -59,13 +59,18 @@ final class RandomCatViewModel {
     
     func likeCat() {
         guard let currentCat = catSubject.value else { return }
+        guard let currentImage = catImageSubject.value else { return }
+        
         print("Liked cat \(currentCat.id)")
+        LikedCatsViewModel.shared.addLikedCat(image: currentImage)
+        
         fetchRandomCat()
     }
     
     func dislikeCat() {
         guard let currentCat = catSubject.value else { return }
         print("Disliked cat \(currentCat.id)")
+        
         fetchRandomCat()
     }
 }
