@@ -1,17 +1,24 @@
 import UIKit
 
-class BreedCell: UITableViewCell {
+final class BreedCell: UITableViewCell {
     static let reuseIdentifier = "BreedCell"
     
     private let breedImageView: UIImageView = {
         let imageView = UIImageView()
+        
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 15
+        
         return imageView
     }()
     
     private let nameLabel: UILabel = {
         let label = UILabel()
+        
         label.font = .systemFont(ofSize: 24, weight: .heavy)
         label.textColor = .black
+        
         return label
     }()
     
@@ -31,7 +38,6 @@ class BreedCell: UITableViewCell {
         super.prepareForReuse()
         
         nameLabel.text = nil
-        breedImageView.image = nil
     }
     
     private func setupView() {
@@ -40,20 +46,21 @@ class BreedCell: UITableViewCell {
         
         breedImageView.snp.makeConstraints {
             $0.top.leading.bottom.equalToSuperview().inset(10)
-            $0.width.equalTo(130)
+            $0.height.width.equalTo(130)
         }
         
         nameLabel.snp.makeConstraints {
             $0.leading.equalTo(breedImageView.snp.trailing).offset(10)
+            $0.trailing.equalToSuperview().inset(10)
             $0.centerY.equalToSuperview()
         }
     }
     
-    func setupCell(with breedModel: BreedModel) {
-        nameLabel.text = breedModel.breed.name
-        guard let breedimage = breedModel.image else {
-            return breedImageView.backgroundColor = .red // ?
+    func setupCell(with breed: Breed, image: UIImage?) {
+        nameLabel.text = breed.name
+        guard let breedImage = image else {
+            return breedImageView.backgroundColor = .gray
         }
-        breedImageView.image = breedimage
+        breedImageView.image = breedImage
     }
 }

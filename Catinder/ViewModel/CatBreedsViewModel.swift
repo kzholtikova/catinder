@@ -3,13 +3,18 @@ import Combine
 import UIKit
 
 final class CatBreedsViewModel {
-    private var breedModelsSubject = PassthroughSubject<[BreedModel], Never>()
+    private var breedsSubject = PassthroughSubject<[Breed], Never>()
+    private var breedsImagesSubject = PassthroughSubject<[UIImage?], Never>()
     private var isLoadingSubject = CurrentValueSubject<Bool, Never>(false)
     private let catAPIService: CatAPIService
     var cancellables = Set<AnyCancellable>()
     
-    var breedModelsPublisher: AnyPublisher<[BreedModel], Never> {
-        breedModelsSubject.eraseToAnyPublisher()
+    var breedsPublisher: AnyPublisher<[Breed], Never> {
+        breedsSubject.eraseToAnyPublisher()
+    }
+    
+    var breedsImagesPublisher: AnyPublisher<[UIImage?], Never> {
+        breedsImagesSubject.eraseToAnyPublisher()
     }
     
     var isLoadingPublisher: AnyPublisher<Bool, Never> {
@@ -18,37 +23,43 @@ final class CatBreedsViewModel {
     
     init(catAPIService: CatAPIService) {
         self.catAPIService = catAPIService
-        fetchBreeds()
     }
     
-    private func fetchBreeds() {
+    func fetchBreeds() {
         isLoadingSubject.send(true)
         
         catAPIService.fetchCatBreeds()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
                 if case .failure = completion {
-                    self?.breedModelsSubject.send([])
+                    self?.breedsSubject.send([])
                 }
             } receiveValue: { [weak self] breeds in
-                self?.fetchBreedImages(for: breeds)
+                self?.breedsSubject.send(breeds)
             }
             .store(in: &cancellables)
+        
+        fetchBreedsImages()
     }
     
-    private func fetchBreedImages(for breeds: [Breed]) {
-        let breedImagePublishers = breeds.map { self.catAPIService.fetchBreedImage(for: $0) }
-        
-        Publishers.MergeMany(breedImagePublishers)
-            .collect()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] completion in
-                self?.isLoadingSubject.send(false)
-                if case .failure = completion {
-                    self?.breedModelsSubject.send([])
-                }
-            } receiveValue: { [weak self] breedModels in
-                self?.breedModelsSubject.send(breedModels)
+    private func fetchBreedsImages() {
+        breedsSubject
+            .sink { [weak self] breeds in
+                guard let self = self else { return }
+                
+                let breedImagePublishers = breeds.map { breed in self.catAPIService.fetchImageForBreed(breedID: breed.id) }
+                
+                Publishers.MergeMany(breedImagePublishers)
+                    .collect()
+                    .sink(receiveCompletion: { [weak self] completion in
+                        self?.isLoadingSubject.send(false)
+                        if case .failure = completion {
+                            self?.breedsImagesSubject.send([])
+                        }
+                    }, receiveValue: { [weak self] images in
+                        self?.breedsImagesSubject.send(images)
+                    })
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
     }
