@@ -32,7 +32,6 @@ final class RandomCatViewModel {
             .compactMap { $0.first }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] completion in
-                self?.isLoadingSubject.send(false)
                 if case .failure = completion {
                     self?.catSubject.send(nil)
                 }
@@ -48,6 +47,7 @@ final class RandomCatViewModel {
         catAPIService.fetchImage(at: url)
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
+                self?.isLoadingSubject.send(false)
                 if case .failure = completion {
                     self?.catImageSubject.send(nil)
                 }
@@ -60,10 +60,12 @@ final class RandomCatViewModel {
     func likeCat() {
         guard let currentCat = catSubject.value else { return }
         print("Liked cat \(currentCat.id)")
+        fetchRandomCat()
     }
     
     func dislikeCat() {
         guard let currentCat = catSubject.value else { return }
         print("Disliked cat \(currentCat.id)")
+        fetchRandomCat()
     }
 }

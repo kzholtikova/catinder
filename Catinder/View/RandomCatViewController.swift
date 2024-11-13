@@ -6,7 +6,6 @@ final class RandomCatViewController : UIViewController {
     private let viewModel: RandomCatViewModel
     
     private var randomCat: Cat? = nil
-    private var isLoading = false
     
     private let catImageViewContainer: UIView = {
         let containerView = UIView()
@@ -55,6 +54,8 @@ final class RandomCatViewController : UIViewController {
         return button
     }()
     
+    private let loadingView = LoadingView()
+    
     init(viewModel: RandomCatViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -76,12 +77,14 @@ final class RandomCatViewController : UIViewController {
         view.addSubview(catImageView)
         view.addSubview(likeButton)
         view.addSubview(dislikeButton)
+        view.addSubview(loadingView)
+        view.bringSubviewToFront(loadingView)
         
         likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
         dislikeButton.addTarget(self, action: #selector(dislikeButtonTapped), for: .touchUpInside)
         
         catImageViewContainer.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(5)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).inset(10)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(500)
         }
@@ -101,6 +104,10 @@ final class RandomCatViewController : UIViewController {
             $0.top.equalTo(catImageViewContainer.snp.bottom).offset(30)
             $0.trailing.equalToSuperview().inset(50)
         }
+        
+        loadingView.snp.makeConstraints {
+            $0.edges.equalTo(view.safeAreaLayoutGuide)
+        }
     }
     
     private func bindViewModel() {
@@ -119,19 +126,20 @@ final class RandomCatViewController : UIViewController {
         
         viewModel.isLoadingPublisher
             .sink { [weak self] isLoading in
-                self?.isLoading = isLoading
-                // Show or hide a loading indicator
+                if isLoading {
+                    self?.loadingView.show()
+                } else {
+                    self?.loadingView.hide()
+                }
             }
             .store(in: &viewModel.cancellables)
     }
     
     @objc private func likeButtonTapped() {
         viewModel.likeCat()
-        viewModel.fetchRandomCat()
     }
     
     @objc private func dislikeButtonTapped() {
         viewModel.dislikeCat()
-        viewModel.fetchRandomCat()
     }
 }

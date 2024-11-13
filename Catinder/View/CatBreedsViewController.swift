@@ -7,13 +7,14 @@ final class CatBreedsViewController : UIViewController {
     
     private var breeds: [Breed] = []
     private var images: [UIImage?] = []
-    private var isLoading = false
     
     private let tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(BreedCell.self, forCellReuseIdentifier: BreedCell.identifier)
         return tableView
     }()
+    
+    private let loadingView = LoadingView()
     
     init(viewModel: CatBreedsViewModel) {
         self.viewModel = viewModel
@@ -28,17 +29,30 @@ final class CatBreedsViewController : UIViewController {
         super.viewDidLoad()
         setupTableView()
         bindViewModel()
-        viewModel.fetchBreeds()
+        
+        DispatchQueue.global(qos: .background).async {
+            self.viewModel.fetchBreeds()
+
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
     }
     
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
         
-        view.addSubview(tableView)
         view.backgroundColor = .darkGray
+        view.addSubview(tableView)
+        view.addSubview(loadingView)
+        view.bringSubviewToFront(loadingView)
         
         tableView.snp.makeConstraints {
+            $0.edges.equalTo(view.safeAreaLayoutGuide)
+        }
+        
+        loadingView.snp.makeConstraints {
             $0.edges.equalTo(view.safeAreaLayoutGuide)
         }
     }
@@ -54,8 +68,13 @@ final class CatBreedsViewController : UIViewController {
         
         viewModel.isLoadingPublisher
             .sink { [weak self] isLoading in
-                self?.isLoading = isLoading
-                // Show or hide a loading indicator
+                DispatchQueue.main.async {
+                    if isLoading {
+                        self?.loadingView.show()
+                    } else {
+                        self?.loadingView.hide()
+                    }
+                }
             }
             .store(in: &viewModel.cancellables)
     }
