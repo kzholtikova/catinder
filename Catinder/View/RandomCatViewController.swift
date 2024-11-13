@@ -5,7 +5,11 @@ import Combine
 final class RandomCatViewController : UIViewController {
     private let viewModel: RandomCatViewModel
     
-    private var randomCat: Cat? = nil
+    private let contentViewBackground: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        return view
+    }()
     
     private let contentViewContainer: UIView = {
         let containerView = UIView()
@@ -80,6 +84,7 @@ final class RandomCatViewController : UIViewController {
     }
     
     private func setupView() {
+        view.addSubview(contentViewBackground)
         view.addSubview(contentViewContainer)
         contentViewContainer.addSubview(catImageViewContainer)
         catImageViewContainer.addSubview(catImageView)
@@ -92,9 +97,21 @@ final class RandomCatViewController : UIViewController {
         
         likeButton.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
         dislikeButton.addTarget(self, action: #selector(dislikeButtonTapped), for: .touchUpInside)
+        
+        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+        swipeLeft.direction = .left
+        view.addGestureRecognizer(swipeLeft)
+        
+        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+        swipeRight.direction = .right
+        view.addGestureRecognizer(swipeRight)
     }
     
     private func setupLayout() {
+        contentViewBackground.snp.makeConstraints {
+            $0.edges.equalTo(view.safeAreaLayoutGuide)
+        }
+        
         contentViewContainer.snp.makeConstraints {
             $0.edges.equalTo(view.safeAreaLayoutGuide)
         }
@@ -129,7 +146,6 @@ final class RandomCatViewController : UIViewController {
     private func bindViewModel() {
         viewModel.catPublisher
             .sink { [weak self] cat in
-                self?.randomCat = cat
                 self?.viewModel.fetchCurrentCatImage()
             }
             .store(in: &viewModel.cancellables)
@@ -157,5 +173,32 @@ final class RandomCatViewController : UIViewController {
     
     @objc private func dislikeButtonTapped() {
         viewModel.dislikeCat()
+    }
+    
+    @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
+        switch gesture.direction {
+        case .left:
+            animateSwipe(direction: .left) { [weak self] in
+                self?.viewModel.dislikeCat()
+            }
+        case .right:
+            animateSwipe(direction: .right) { [weak self] in
+                self?.viewModel.likeCat()
+            }
+        default:
+            break
+        }
+    }
+
+    private func animateSwipe(direction: UISwipeGestureRecognizer.Direction, completion: @escaping () -> Void) {
+        let translationX: CGFloat = direction == .left ? -200 : 200
+        UIView.animate(withDuration: 0.3, animations: {
+            self.contentViewContainer.transform = CGAffineTransform(translationX: translationX, y: 0)
+            self.contentViewContainer.alpha = 0
+        }, completion: { _ in
+            self.contentViewContainer.transform = .identity
+            self.contentViewContainer.alpha = 1
+            completion()
+        })
     }
 }
